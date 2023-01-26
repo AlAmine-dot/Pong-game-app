@@ -1,0 +1,298 @@
+---------- NOTES DE CONCEPTION DU PROJET -----------
+
+-------- HTML --------
+
+Il s'agira de créer :
+- Un div pour les scores avec des sous div pour le score joueur et ordinateur avec les class adaptés
+- Une div pour la balle de classe ball et d'ID ball pour l'usage pratique
+- Des div pour le paddle left et le paddle right ayant comme class leurs noms et comme id leur fonction
+player-paddle ou computer-paddle.
+
+Le type="module"
+Est une caractéristique qu'on rajoute à notre fichier HTML pour autoriser les import export
+de fonctions, class et objets d'un fichier JS à un autre dans le but de clarifier le code.
+Pour tout ce qui concerne la syntaxe réfère toi à la vidéo de Web Dev Simplified sur les import/export
+
+-------- CSS --------
+
+--- BASICS 
+
+Tu commences par la configuration de base avec *,::before,::after border box et margin padding à 0
+Tu donnes à ton background la couleur #333.
+
+--- PADDLES
+
+paddle sera en position absolute, et de couleur blanc, tu décales les paddle left et right de 1vw par-rapport 
+à la bordure une hauteur de 10vh et une épaisseur de 1vh
+tu utilise top et transform translate pour les mettre au centre mais la valeur rentrée 
+là-bas doit varier suivant ton javascript donc tu crées une variable position que tu initialises
+à la valeur nécessaire pour centrer. tu l'implémentes dans top en utilisant calc et var *1vh pour 
+Garder la valeur en vh ! 
+
+--- COLORS
+
+Finalement pour les couleurs, nous allons apporter des modifications et utiliser hsl à la place
+il s'agira donc de créer :
+- un root avec les variables 
+hue à 200
+saturation à 50%
+foreground-color qui sera en format hsl avec hue et saturation + 75% de lightness
+background-color qui aura la même chose mais 20% de lightness
+
+Après ça, tu pourras remplacer toutes les autres couleurs de ton css par ces variables là de telle
+sorte à avoir un résultat esthétique. 
+Ce qui est cool c'est qu'on peut changer le theme rien qu'en modifiant le hue.
+
+--- BALL 
+
+La balle a les mêmes caractéristiques générales que les paddles, nous allons donc copier coller ce dernier
+puis apporter quelques modifications :
+à la place de la position nous aurons des variables
+x = 50 et y = 50 par défaut (le centre).
+à la place de top only on aura :
+top : avec l valeur de y en vh (view height car il s'agit de la hauteur)
+left : avec la valeur de x en vw (view width car c'est la largeur)
+il faudra biensur utiliser calc pour garder l'unité.
+
+On constate ici l'utilisation de la combinaison entre var et calc.
+Il permet de donner une unité en enregistrant une variable.
+
+Pour ses dimensions nous mettrons, height et width à 2.5vh, le translate X devient un translate tout court 
+avec -50%,-50% puis un border-raduis de 50% en fera un cercle.
+
+--- SCORE 
+
+Voici un article très intéressant qui m'a aidé à mieux comprendre la partie score :
+https://css-tricks.com/understanding-flex-grow-flex-shrink-and-flex-basis/
+
+Nous allons mettre la div score en flex.
+Mettre les éléments au centre avec jcontent
+font weight bold et font size à 7vh
+la couleur sera le foreground.
+
+Maintenant on sélectionne tous les enfants de score > *
+on y met un flex grow de 1 et un flex-basis de 0
+c'est à dire qu'ils vont tous les deux prendre au max la moitié de l'écran et auront comme taille
+idéale ça 
+
+ensuite on cible le 1er enfant > :firstchild qu'on va mettre à droite via text-align right
+de ce fait, peut importe la taille des scores, ils resteront toujours à gauche et à droite 
+padding 0 2vh , margin 1vh et 0, opacité à 0.5 pour la discretion
+border-right du premier child à .5vh solid foreground pour séparer les deux
+
+/!\ LA SECTION SCORE EST TRES INTERESSANTE !!!
+Pense à réutiliser la même démarche pour afficher les scores dans tes anciens et futur jeux (c'est un point où tu galérais beaucoup)
+
+-------- JAVASCRIPT --------
+
+---- JAVASCRIPT SETUP ----
+
+Le jeu va tourner autour d'une fonction appelée Update Loop, c'est lui qui va "s'occuper" de mette à jour 
+la position des paddle et de la ball et la logique du jeu.
+
+Pour simplifier le code nous allons créer un fichier js pour chaque élément du jeu, puis utiliser les import/export
+
+-- ball.js
+
+nous aurons ici la class Ball qui nous allons export default juste après.
+dans la class Ball il y aura le constructor(ballElem) qui va se résumer à this.ballElem = ballElem c'est à dire
+que la variable ballElem que nous utiliserons plus tard va venir se coller ici.
+
+nous allons importer ensuite ce fichier ball dans l'index.js. Si tu as des soucis de syntaxe consulte la vidéo 
+sur les import/export
+
+/!\ POUR FAIRE FONCTIONNER LES IMPORT/EXPORT :
+Tu dois lancer ta page depuis le Live Server car ça ne marche pas avec le protocole file://
+tu peux aussi créer un localhost via nodejs mais flemme.
+
+puis créer une new instance de Ball auquel on va associer la balle en la ciblant via son id ball
+
+/!\ document.body.getElementbyId ne marche pas avec le body au milieu.
+That's because document. body is an element. Elements do not have a getElementById()
+
+
+Notre fonction update sera crée et prendra comme variable time.
+Nous aurions pu utiliser setInterval pour l'appeler en boucle mais setInterval n'est pas si fiable.
+Il est toujours mieux pour l'efficience de ton code d'utiliser window.requestAnimationFrame(nom_fonction).
+Cependant, il faudra l'appeler à l'intérieur et endehors de ta fonction pour que ça devienne une loop.
+Tu pourras vérifier que ça marche en faisant un log de time dans la console : c'est une variable qui s'incrémente
+très rapidement.
+
+Cependant, c'est pas du temps que nous allons avoir besoin mais du delta à savoir
+delta = time - lastTime
+nous créerons donc la variable lastTime endehors de la boucle et à l'intérieur nous ferons
+delta = time - lastTime (il faudra créer delta comme constante) et mettre lastTime = time avant le tour suivant.
+Mais le problème est que au premier tour, il n'y a pas encore de lastTime :
+Pour le régler on devra mettre un if pour n'effectuer le calcul const delta = time - lastime que si last time est 
+différent de null et justement notre UPDATE CODE sera là-bas.
+
+Avec un petit log tu verras que delta fluctue légèrement de ce fait, pour s'assurer que notre balle 
+bougera de façon fluide, nous lui appliquerons avec la fonction update (une autre qui vient de la classe ball !), la variable delta.
+Une fois la fonction update complètement créee, pour ball c'est delta qui sera utilisé et ce sera fluide.
+
+---- JAVASCRIPT OF BALL ----
+
+Nous allons donc créer la fonction update qui prend delta dans la class.
+
+/!\ Nul besoin de mettre la fonction dans le constructeur ! Tu ne met dans le constructeur que les valeurs ou fonctions qui doivent
+se recréer pour chaque instance d'une balle.
+
+Sachant que la balle va avoir une position x,y et aussi une certaine vélocité en mouvement tout comme une direction dans laquelle bouger,
+nous allons d'abord devoir récupérer ces informations pour ensuite faire tous les calculs pour savoir comment il va rebondir d'où les fonctions
+helpers, ils vont t'aider à récupérer les valeurs de x et y à tout moment ( get x() ) et les changer ( set x() )
+pour get x() tu vas simplement retourner la valeur de --x mais pour la cibler on va utiliser :
+
+getComputedStyle(cible) cette méthode permet de récupérer tout le style appliqué à la cible.   
+et pour récupérer la valeur d'une cible en particulier on utilise .getpropretyValue(nom_de_la_propriété) : très pratique.
+
+/!\ ATTENTION TU RECUPERES ET MODIFIE QUE CE SOIT POUR SET OU GET
+DIRECTEMENT --x et --y et non pas left et top. et n'oublie pas de les parsefloat !!
+Et pour la syntaxe il faudra mettre les "" sur les variables.
+
+pour le set tu cible la balle et tu utilise setProprety avec la bonne syntaxe et n'oublie pas que contrairement au getter
+le setter doit récupérer une variable value qu'il va set.
+
+Une fois le getter et le setter installés sur x et y tu pourras les modifier dans update en mettant this.x = (valeur) 
+
+Toutefois, la balle devra revenir au milieu à chaque fois que le jeu recommence, d'où l'utilité de reset la fonction qu'il faudra mettre
+dans le constructeur this.reset() => c'est comme ça qu'on définit une fonction dans un constructeur.
+
+/!\ get et set n'ont pas besoin d'être dans le constructeur : reset mettra x et y à 50. Pour la direction, elle va correspondre à un couple 
+x et y comme en maths ce sera { x: 0.75, y: 0.5} pour commencer (la balle ira vers un endroit précis dès le début.)
+
+x sera donc la direction sur l'axe des x et y sur l'axe des ordonnées, ce qui va nous donner une direction dans l'espace.
+On devra s'assurer que le vecteur a aie toujours une longueur égale à 1 pour que ce soit uniquement la vélocité qui détermine la vitesse
+de notre balle. ça parait un peu abstrait mais tu vas comprendre avec la suite du code.
+
+Comment calcule-t-on la direction ? Ou plutôt comment la matérialise-t-on de la bonne façon :
+avec une variable constante heading (sens) qui va contenir un nombre pris au hazard entre 0 et 2*Math.PI (360)
+une fois cet heading choisi, pour trouver sa direction on va utiliser cos(heading) pour la valeur des x et sin(heading) pour les y
+donc this.direction sera math.cos(heading) et math.sin(heading)
+
+toutefois, on ne veut pas que le jeu soit ennuyeux avec une balle qui ne va que de haut en bas et de gauche à droite. par conséquent, la logique
+ci-dessus ne va s'effectuer que quand x est dans un intervalle bien précis : 0,0.2 U 0.9,+infini d'où une boucle while.
+
+/!\ Attention ici c'est le x de la direction de la balle (celui du couple this.direction) ! pas le x de la balle
+
+Ces valeurs ont été soigneusement choisi par quelqu'un de plus sage que toi donc tais-toi et applique.
+
+Il faudra penser à utilise Math.abs pour comparer les valeurs absolues de this.direction.x dans la condition de la boucle while.
+
+Après tout ceci fait, on peut finalement laisser this.direction à x:0 quand on reset et le while donnera une position au hasard
+
+Ah oui sinon il faudra créer getRandomNumberBetween(min,max) toi même c'est simple il retourne Math.random multiplié par max - min le tt + min
+
+Concernant la vélocité c'est à dire la vitesse :
+
+this.velocity sera égal à une constante : INITIAL_VELOCITY qu'on va définir bien avant notre classe comme étant égal à 0.025.
+Un homme plus sage que toi a choisi cette valeur, mais tu peux toujours t'amuser à le modifier.
+
+Une fois que position,direction et vélocité existent, on peut commencer à mettre à jour les mouvements de la balle comme on veut.
+Les valeurs qu'on avait mises dans update vont devenir : la direction (selon l'axe où on est x/y) multiplié par la vélocité et le temps delta
+pour qu'il bouge plus ou moins rapidement suivant la mise à jour des frames
+
+Un petit overflow hidden ne ferait pas de mal pour éviter que la page se casse quand la balle bouge !
+
+Oui mais maintenant, pourquoi il rebondit pas ?
+Nous y venons cher Watson ! 
+
+Nous allons créer une fonction rect qui va juste retourner les informations de la balle dans la zone d'affichage.
+La méthode qui permet cela est : cible.getboundingclientrect() et on va déclarer cet attribut dans la fonction update comme étant
+la variable rect
+
+n'oublie pas pour déclarer dans une classe c'est const truc = this.truc
+sauf pour les fonctions ce sera this.truc() tout court.
+
+Dans les infos retournés par le getboundingclientrect tu as le bottom le top etc.
+Du coup tout ce qu'il te reste à faire c'est de demander dans update de :
+si le bottom du rect est supérieur ou égal à la hauteur du window OU le top du rect inférieur ou égal à 0
+bah tu le dévie vers l'intérieur (il suffit de multiplier la direction sur l'axe des ordonnés par -1)
+même chose pour le right et le left mais cette fois ci tu inverse le x.
+
+/!\ Enfaite c'était pas la peine de créer une fonction tu aurais juste pu tout stocker dans une variable rect.
+
+Après ça, nous voudrons que la vitesse de la balle augmente au fur et à mesure mais très légèrement.
+Nous créerons donc une constante VELOCITY_INCREASE que l'on va rajouter à la vélocité à chaque update
+on déclarera cette variable en dehors de la classe.
+
+et elle sera égale à 0.00001 comme l'a décidé plus sage que toi. 
+
+---- JAVASCRIPT OF PADDLES ----
+
+On va commencer par répéter le même procédé pour le setup de la balle qu'ici.
+En gros tu crées la classe paddle dans paddle.js tu y mets le constructeur avec paddleElem comme nom, tu l'importe dans index.js
+ensuite dans index.js tu crées 2 objets de classe paddle : playerPaddle et computerPaddle que tu vas cibler avec leur ID sans
+Faire l'erreur du document.body !
+
+Cette fois pour le playerPaddle, ce sera simple, tu vas juste rajouter un event mouse, récupérer e et faire en sorte que
+la position de playerPaddle soit égale à e.y mais n'oublie pas de convertir ça en vh en divisant par le inner height et * 100 à la fin.
+Ici la position ne se manipulera pas via une css path mais avec l'objet lui même et dans l'objet il y'aura un get and set
+de la variable position.
+
+Après ça, normalement le paddle du joueur commencera à suivre la souris sur les y.
+
+/!\Tu as copié coller sur ball alors que les id n'avaient pas la même forme. Avant de copier coller demande toi toujours si toute la syntaxe
+est similaire, il y'a souvent des différences que tu ne soupçonne pas, et au pire des cas écrit ça toi même.
+
+Pour le computerPaddle il y'aura besoin de la fonction update. on va donc l'appliquer sur le computerUpdate et lui affecter la variable delta
+mais aussi la position de la balle sur l'axe des y car il en a besoin pour savoir où aller.
+
+
+Ensuite, dans la class Paddle tu vas créer cet update et lui affecter delta ainsi que la variable ballHeight qui va stocker e.y
+Tu pourrais juste mettre this.position = ballHeight mais l'ordinateur deviendrait imbattable. Donc l'idée c'est de créer en dehors de la classe
+une variable SPEED à .02 par defaut qu'on va mutliplier par delta et la différence entre ballHeight et la position actuelle du paddle
+Ce qui va soit retourner une valeur négative soit une valeur positive suivant la position des deux. Il faudra incrémenter ça à this.position
+
+---- JAVASCRIPT OF THE GAME LOGIC ----
+
+Pour tes paddles tu vas créer une fonction reset qui va remettre les paddle au milieu. cette fonction sera appelée dans le constructeur.
+
+Dans l'index, nous allons créer une fonction isLose qui va retourner simplement la condition de la balle (true ou false)
+et cette condition c'est est-ce qu'elle a dépassée le mur gauche (tu sais où retrouver la cdt). et n'oublie pas de déclarer rect dans la 
+fonction pour ne pas avoir de problèmes.
+
+On modifie le code pour que la balle ne rebondisse plus dans ce cas là. Tu peux effectuer un log test "lose".
+
+Et dans l'update, on va vérifier cette condition. Si le joueur a perdu on appelle la condition handleLose qui va juste
+reset la position de la balle et des paddle.
+
+Crée les variables playerScoreElem et computerScoreElem et cibler les score via leur ID.
+dans handleLose tu vas vérifier si la balle est passée dans un camp ou l'autre avec les cdts que tu connais et incrémenter 
+le score correspondant par conséquent. (pour l'incrémenter tu vas devoir utilisé une forme détaillée et un parseInt vu que c'est un textContent)
+
+Maintenant comment faire en sorte que ça rebondisse sur les paddle ? 
+
+On retourne dans ball.js et on passe à la fonction update la variable paddleRects et on crée Rect dans paddle de telle sorte qu'il retourne
+les informations d'affichage avec getboundingclientrect.
+
+Ensuite en retournant dans la déclaration de update dans index, on pourra rajouter un tableau avec playerPaddle.rect() et idem pour computer
+comme ça on stocke dans paddleRects les 2 rects.
+
+Puiiiiis, à la toute dernière condition qui devait faire rebondir la balle sur les murs de gauche et de droite on va apporter une modification.
+
+Le if va porter comme un some sur la table PaddleRects chaque instance étant un r, la fonction fléchée va aboutir sur une fonction isCollision
+prenant en variable r et rect de la balle.
+On va ensuite créer isCollision en bas qui prend rect1 r et rect2 de la balle.
+
+Il retourne directement les conditions.
+Pour ces-derniers c'est encore flou dans ma tête mais pense à revoir les propriétés de getboundingclientrect et à essayer de visualiser
+pour le top,bottom tu peux y arriver mais pour le left right ça reste encore assez flou dans ma tête.
+
+Enfaite la confusion que j'avais c'était que l'une des deux conditions left-right ne se vérifiait pas sur l'autre paddle
+mais en réalité si, il est juste vrai donc ne change rien au résultat final ne change pas, c'est des & quoi. les 3 peuvent être tout le temps vrai 
+c'est le dernier qui serait crucial.
+
+Et enfin pour donner une meilleure touche visuelle au jeu tu peux faire en sorte que les couleurs varient légèrement.
+
+tu utilise getComputedStyle du du document.documentElement et propretyvalue pour cibler --hue, tu le met dans une constante
+
+et ensuite via setproperty tu modifie cette valeur dans le documentElement qui sera égale à hue + delta * 0.1
+
+documentElement = l'élément racine du document HTML, le padre du tout.
+retiens bien getComputedStyle et propretyvalue ils sont très intéressants pour récupérer des variables
+et setproperty pour les changer.
+
+Enfin le getboundingclientrect qui a été d'une très grande aide !
+
+/!\ Quand tu récupères des variables via la combinaison getComputedStyle et propretyvalue pense toujours à parse le résultat sinon tu obtient
+une chaine de caractère !!! 
